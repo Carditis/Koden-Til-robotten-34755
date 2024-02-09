@@ -1,0 +1,19 @@
+% Mission plan40 logfile
+% 1 	Time (sec)
+% 2 	Mission state
+% 3 	% Mission status (mostly for debug)
+1703755938.9754 10 % Plan40 started
+1703755938.9754 10 % looking for line
+1703755938.9755 10 % forward 0.1 m/sec
+1703755938.9756 10 % State change from 10 to 11
+1703755939.2355 11 % found line
+1703755939.2396 11 % found line
+1703755939.2437 11 % found line
+1703755939.2437 11 % found line 3 times
+1703755939.2437 11 % State change from 11 to 15
+1703755942.8026 15 % Found crossing line - go straight
+1703755942.8026 15 % State change from 15 to 30
+1703755943.0178 30 % State change from 30 to 15
+1703755943.0340 15 % Lost line
+1703755943.0340 15 % State change from 15 to 40
+1703755943.0421 40 % Plan40 got lost (or finished)

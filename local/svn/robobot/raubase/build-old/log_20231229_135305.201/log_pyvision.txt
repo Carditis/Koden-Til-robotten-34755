@@ -1,0 +1,6 @@
+% connection to python vision - logfile
+% connection to localhost port 25001 (not connected)
+% 1 	Time (sec)
+% 2 	Rx or Tx
+% 3 	Rx or Tx message count
+% 4 	Command send or string received
