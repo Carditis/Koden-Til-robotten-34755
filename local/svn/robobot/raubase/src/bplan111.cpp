@@ -93,16 +93,30 @@ void BPlan111::run()
     { // make a shift in heading-mission
       case 10:
         pose.resetPose();
-        toLog("forward at 0.3m/s");
-        mixer.setVelocity(0.01);
+        toLog("backward at 0.1m/s");
+        mixer.setVelocity(-0.01);
         state = 11;
         break;
-      case 11: // wait for distance
-        if (pose.dist >= 1.0)
+      case 11:
+        pose.resetPose();
+        toLog("distance reached")
+        if (pose.dist >= 1.0){
+          finished = true;
+        }
+        state = 12;
+        break;
+      case 12:
+        pose.resetPose();
+        toLog("forward at 0.1m/s");
+        mixer.setVelocity(0.01);
+        state = 13;
+        break;
+      case 13: // wait for distance
+        if (pose.dist >= 2.0)
         { // done, and then
           finished = true;
         }
-        else if (t.getTimePassed() > 10)
+        else if (t.getTimePassed() > 30)
           lost = true;
         break;
       default:
