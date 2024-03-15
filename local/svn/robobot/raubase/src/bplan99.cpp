@@ -158,7 +158,7 @@ void BPlan40::run()
           state = 90;
         }
         break;
-      case 40: // follow edge until crossing line, the go straight
+      case 40: // follow edge until passing Tania-gate, then drive a bit further and turn to circle.
         if (medge.width > 0.075 and pose.dist > 0.2)
         { // go straight
           mixer.setTurnrate(0);
@@ -176,12 +176,12 @@ void BPlan40::run()
           state = 80;
         }
         break;
-      case 50: // continue straight until wall is close
+      case 50: // continue straight until circle is close
         if (dist.dist[0] < 0.15)
         { // wall found
-          toLog("wall found");
+          toLog("circle found");
           mixer.setVelocity(0);
-          finished = true;
+          state = 91;
         }
         else if (t.getTimePassed() > 10)
         {
@@ -193,6 +193,50 @@ void BPlan40::run()
           toLog("too far");
           lost = true;
         }
+        break;
+      case 91: // TURN 180 DEGREE
+        mixer.setTurnrate(3.14/5); //TURN 180 DEGREES IN 5 SEC.
+        if (pose.turned > 3.14)
+        {
+          toLog("turned 180 degrees");
+          state = 92;
+        }
+        else if (t.getTimePassed() > 10)
+        {
+          toLog("too long time");
+          lost = true;
+        }
+        break;
+      case 92: // MOVE BACKWARDS ONTO PLATFORM
+        mixer.setVelocity(-0.2)
+        if (pose.dist > 0.3) //IF DISTANCE DRIVEN = ON PLATFORM
+        {
+          mixer.setVelocity(0);
+          toLog("in position for three gates");
+          state = 93;
+        }
+        else if (t.getTimePassed() > 10)
+        {
+          toLog("too long time");
+          lost = true;
+        }
+        break;
+      case 93: // DO A CIRCLE AND PASS THREE GATES
+        mixer.setTurnrate(0.2); //
+        if (pose.turned > 0.3) // TURNED = DEGREE SUCH THAT THE CIRCLE IS PERFECT ALLIGNED WITH GATES.
+        {
+          mixer.setVelocity(0);
+          toLog("turned, ready to circle");
+          state = 93;
+        }
+        else if (t.getTimePassed() > 10)
+        {
+          toLog("too long time");
+          lost = true;
+        }
+        mixer.setTurnrate(0.1); //CALCULATE TURNRATE TO MATCH VELOCITY
+        mixer.setVelocity(0.1); // -||-
+        toLog("circling");
         break;
       default:
         lost = true;
