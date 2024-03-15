@@ -58,6 +58,7 @@ void BPlan301::run()
   if (ini["plan301"]["run"] == "false")
     return;
   //
+  CServo.setup();
   UTime t("now");
   bool finished = false;
   bool lost = false;
@@ -71,48 +72,15 @@ void BPlan301::run()
     switch (state)
     { // make a shift in heading-mission
       case 10:
-        toLog("Reset pose");
-        pose.resetPose();
+        toLog("move Servo to mid position");
+        CServo.setServo(1, TRUE, 0, 500);
 
-        toLog("forward at 0.3m/s");
-        mixer.setVelocity(0.3);
+
         state = 11;
         break;
-      case 11: // wait for distance
-        if (pose.dist >= 0.3)
-        { // done, and then
-          toLog("now turn at 0.5 rad/s and 0 m/s");
-          // reset turned angle
-          pose.turned = 0.0;
-          mixer.setVelocity(0.0);
-          mixer.setTurnrate(0.5);
-          state = 21;
-        }
-        else if (t.getTimePassed() > 10)
-          lost = true;
-        break;
-      case 21:
-        if (pose.turned >= M_PI)
-        {
-          mixer.setDesiredHeading(M_PI);
-          toLog("now go back");
-          mixer.setVelocity(0.3);
-          // reset driven distance
-          pose.dist = 0;
-          state = 31;
-        }
-        else if (t.getTimePassed() > 12)
-          lost = true;
-        break;
-      case 31: // wait for distance
-        if (pose.dist >= 0.3)
-        { // the end
-          mixer.setVelocity(0.0);
-          finished = true;
-        }
-        else if (t.getTimePassed() > 10)
-          lost = true;
-        break;
+     
+
+
       default:
         toLog("Unknown state");
         lost = true;
