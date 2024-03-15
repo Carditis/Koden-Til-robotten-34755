@@ -94,12 +94,12 @@ void BPlan111::run()
       case 10:
         pose.resetPose();
         toLog("backward at 0.1m/s");
-        mixer.setVelocity(-0.01);
+        mixer.setVelocity(-0.1);
         state = 11;
         break;
       case 11:
         pose.resetPose();
-        toLog("distance reached")
+        toLog("distance reached");
         if (pose.dist >= 1.0){
           finished = true;
         }
@@ -108,7 +108,7 @@ void BPlan111::run()
       case 12:
         pose.resetPose();
         toLog("forward at 0.1m/s");
-        mixer.setVelocity(0.01);
+        mixer.setVelocity(0.1);
         state = 13;
         break;
       case 13: // wait for distance
