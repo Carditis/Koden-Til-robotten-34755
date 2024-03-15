@@ -1,27 +1,4 @@
 
-/*  
- * 
- * Copyright © 2023 DTU,
- * Author:
- * Christian Andersen jcan@dtu.dk
- * 
- * The MIT License (MIT)  https://mit-license.org/
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
- * and associated documentation files (the “Software”), to deal in the Software without restriction, 
- * including without limitation the rights to use, copy, modify, merge, publish, distribute, 
- * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software 
- * is furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all copies 
- * or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
- * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
- * PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE 
- * FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN 
- * THE SOFTWARE. */
 
 #include <string>
 #include <string.h>
@@ -39,28 +16,28 @@
 #include "cmixer.h"
 
 
-#include "bplan100.h"
+#include "bplan301.h"
 
 // create class object
-BPlan100 plan100;
+BPlan301 plan301;
 
 
-void BPlan100::setup()
+void BPlan301::setup()
 { // ensure there is default values in ini-file
-  if (not ini["plan100"].has("log"))
+  if (not ini["plan301"].has("log"))
   { // no data yet, so generate some default values
-    ini["plan100"]["log"] = "true";
-    ini["plan100"]["run"] = "false";
-    ini["plan100"]["print"] = "true";
+    ini["plan301"]["log"] = "true";
+    ini["plan301"]["run"] = "false";
+    ini["plan301"]["print"] = "true";
   }
   // get values from ini-file
-  toConsole = ini["plan100"]["print"] == "true";
+  toConsole = ini["plan301"]["print"] == "true";
   //
-  if (ini["plan100"]["log"] == "true")
+  if (ini["plan301"]["log"] == "true")
   { // open logfile
-    std::string fn = service.logPath + "log_plan100.txt";
+    std::string fn = service.logPath + "log_plan301.txt";
     logfile = fopen(fn.c_str(), "w");
-    fprintf(logfile, "%% Mission plan100 logfile\n");
+    fprintf(logfile, "%% Mission plan301 logfile\n");
     fprintf(logfile, "%% 1 \tTime (sec)\n");
     fprintf(logfile, "%% 2 \tMission state\n");
     fprintf(logfile, "%% 3 \t%% Mission status (mostly for debug)\n");
@@ -68,17 +45,17 @@ void BPlan100::setup()
   setupDone = true;
 }
 
-BPlan100::~BPlan100()
+BPlan301::~BPlan301()
 {
   terminate();
 }
 
 
-void BPlan100::run()
+void BPlan301::run()
 {
   if (not setupDone)
     setup();
-  if (ini["plan100"]["run"] == "false")
+  if (ini["plan301"]["run"] == "false")
     return;
   //
   UTime t("now");
@@ -87,7 +64,7 @@ void BPlan100::run()
   state = 10;
   oldstate = state;
   //
-  toLog("Plan100 started");
+  toLog("Plan301 started");
   //
   while (not finished and not lost and not service.stop)
   {
@@ -153,23 +130,23 @@ void BPlan100::run()
   }
   if (lost)
   { // there may be better options, but for now - stop
-    toLog("Plan100 got lost");
+    toLog("Plan301 got lost");
     mixer.setVelocity(0);
     mixer.setTurnrate(0);
   }
   else
-    toLog("Plan100 finished");
+    toLog("Plan301 finished");
 }
 
 
-void BPlan100::terminate()
+void BPlan301::terminate()
 { //
   if (logfile != nullptr)
     fclose(logfile);
   logfile = nullptr;
 }
 
-void BPlan100::toLog(const char* message)
+void BPlan301::toLog(const char* message)
 {
   UTime t("now");
   if (logfile != nullptr)
