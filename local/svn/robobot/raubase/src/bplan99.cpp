@@ -38,28 +38,28 @@
 #include "cmixer.h"
 #include "sdist.h"
 
-#include "bplan40.h"
+#include "bplan99.h"
 
 // create class object
-BPlan40 plan40;
+BPlan99 plan99;
 
 
-void BPlan40::setup()
+void BPlan99::setup()
 { // ensure there is default values in ini-file
-  if (not ini["plan40"].has("log"))
+  if (not ini["plan99"].has("log"))
   { // no data yet, so generate some default values
-    ini["plan40"]["log"] = "true";
-    ini["plan40"]["run"] = "false";
-    ini["plan40"]["print"] = "true";
+    ini["plan99"]["log"] = "true";
+    ini["plan99"]["run"] = "false";
+    ini["plan99"]["print"] = "true";
   }
   // get values from ini-file
-  toConsole = ini["plan40"]["print"] == "true";
+  toConsole = ini["plan99"]["print"] == "true";
   //
-  if (ini["plan40"]["log"] == "true")
+  if (ini["plan99"]["log"] == "true")
   { // open logfile
-    std::string fn = service.logPath + "log_plan40.txt";
+    std::string fn = service.logPath + "log_plan99.txt";
     logfile = fopen(fn.c_str(), "w");
-    fprintf(logfile, "%% Mission plan40 logfile\n");
+    fprintf(logfile, "%% Mission plan99 logfile\n");
     fprintf(logfile, "%% 1 \tTime (sec)\n");
     fprintf(logfile, "%% 2 \tMission state\n");
     fprintf(logfile, "%% 3 \t%% Mission status (mostly for debug)\n");
@@ -67,16 +67,16 @@ void BPlan40::setup()
   setupDone = true;
 }
 
-BPlan40::~BPlan40()
+BPlan99::~BPlan99()
 {
   terminate();
 }
 
-void BPlan40::run()
+void BPlan99::run()
 {
   if (not setupDone)
     setup();
-  if (ini["plan40"]["run"] == "false")
+  if (ini["plan99"]["run"] == "false")
     return;
   UTime t("now");
   bool finished = false;
@@ -86,7 +86,7 @@ void BPlan40::run()
   const int MSL = 100;
   char s[MSL];
   //
-  toLog("Plan40 started");
+  toLog("Plan99 started");
   //
   while (not finished and not lost and not service.stop)
   {
@@ -177,7 +177,7 @@ void BPlan40::run()
         }
         break;
       case 50: // continue straight until circle is close
-        if (dist.dist[0] < 0.15)
+        if (dist.dist[0] < 0.15) //IR sensoren kan vel ikke rigtig se hvor tæt på circklen er? Hardcodes? 
         { // wall found
           toLog("circle found");
           mixer.setVelocity(0);
@@ -234,8 +234,8 @@ void BPlan40::run()
           toLog("too long time");
           lost = true;
         }
-        mixer.setTurnrate(0.1); //CALCULATE TURNRATE TO MATCH VELOCITY
-        mixer.setVelocity(0.1); // -||-
+        mixer.setTurnrate(-0.1); //CALCULATE TURNRATE TO MATCH VELOCITY
+        mixer.setVelocity(-0.1); //ROBOT DRIVING BACKWARDS TO DO CIRCLE
         toLog("circling");
         break;
       default:
@@ -254,12 +254,12 @@ void BPlan40::run()
   }
   if (lost)
   { // there may be better options, but for now - stop
-    toLog("Plan40 got lost - stopping");
+    toLog("Plan99 got lost - stopping");
     mixer.setVelocity(0);
     mixer.setTurnrate(0);
   }
   else
-    toLog("Plan40 finished");
+    toLog("Plan99 finished");
 }
 
 
@@ -270,7 +270,7 @@ void BPlan40::terminate()
   logfile = nullptr;
 }
 
-void BPlan40::toLog(const char* message)
+void BPlan99::toLog(const char* message)
 {
   UTime t("now");
   if (logfile != nullptr)
