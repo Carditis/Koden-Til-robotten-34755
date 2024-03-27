@@ -37,7 +37,6 @@
 #include "cedge.h"
 #include "cmixer.h"
 
-#include "sdist.h"
 
 #include "bplan111.h"
 

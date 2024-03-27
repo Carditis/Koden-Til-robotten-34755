@@ -131,7 +131,7 @@ void MEdge::findEdge()
   { // invalid calibration values
     leftEdge = 0.0;
     rightEdge = 0.0;
-//     crossingValid = false;
+//    crossingValid = false;
     edgeValid = false;
     return;
   }

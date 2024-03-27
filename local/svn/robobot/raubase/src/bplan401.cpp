@@ -93,18 +93,44 @@ void BPlan401::run()
     { // make a shift in heading-mission
       case 10:
         pose.resetPose();
-        toLog("forward at 0.3m/s");
-        mixer.setVelocity(0.1);
+        toLog("Drive up the ramp, it is 2.3 meters");
+        mixer.setVelocity(0.5);
+		mixer.setEdgeMode(true,0);
         state = 11;
         break;
       case 11: // wait for distance
-        if (pose.dist >= 1.0)
-        { // done, and then
-          finished = true;
+        if (pose.dist >= 3.0)
+		{
+		  mixer.setVelocity(0.0);
+		  usleep(1000000);
+		  toLog("The top of the ramp has been reached and we have waited 1s");
+		  state = 12;
+		  toLog("switched state!");
         }
-        else if (t.getTimePassed() > 10)
-          lost = true;
-        break;
+        //else if (t.getTimePassed() > 10)
+		//{
+        //  lost = true;
+        //}
+		break;
+	  case 12:
+		pose.resetPose();
+		pose.dist = 0.0;
+		toLog("Drive to the edge");
+		mixer.setVelocity(-0.2);
+		mixer.setEdgeMode(false,0);
+		state = 13;
+		break;
+	  case 13:
+		if (pose.dist < -0.3)
+		{
+		  mixer.setVelocity(0.0);
+		  finished = true;
+		}
+		else if (t.getTimePassed() > 10)
+		{
+		  lost = true;
+		}
+		break;
       default:
         toLog("Unknown state");
         lost = true;

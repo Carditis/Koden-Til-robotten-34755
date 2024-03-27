@@ -1,0 +1,11 @@
+% Mission plan501 logfile
+% 1 	Time (sec)
+% 2 	Mission state
+% 3 	% Mission status (mostly for debug)
+1711561863.8762 9 % Plan501 started
+1711561863.8762 9 % Case 9 started
+1711561863.8762 9 % set velocity 0.1
+1711561868.2826 9 % Object spotted
+1711561868.2826 9 % Case 11 started
+1711561869.2829 9 % Case 12 started
+1711561891.2116 9 % Plan501 finished
