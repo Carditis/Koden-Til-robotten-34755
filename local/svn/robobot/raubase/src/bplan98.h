@@ -29,12 +29,12 @@ using namespace std;
  * Class intended to accomplish a short mission,
  * e.g. one challenge or part of a challenge
  * */
-class BPlan99
+class BPlan98
 {
 public:
   /**
    * destructor */
-    ~BPlan99();
+    ~BPlan98();
   /** setup and request data */
   void setup();
   /**
@@ -60,5 +60,5 @@ private:
 
 /**
  * Make this visible to the rest of the software */
-extern BPlan99 plan99;
+extern BPlan98 plan98;
 

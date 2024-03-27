@@ -38,28 +38,28 @@
 #include "cmixer.h"
 #include "sdist.h"
 
-#include "bplan99.h"
+#include "bplan98.h"
 
 // create class object
-BPlan99 plan99;
+BPlan98 plan98;
 
 
-void BPlan99::setup()
+void BPlan98::setup()
 { // ensure there is default values in ini-file
-  if (not ini["plan99"].has("log"))
+  if (not ini["plan98"].has("log"))
   { // no data yet, so generate some default values
-    ini["plan99"]["log"] = "true";
-    ini["plan99"]["run"] = "false";
-    ini["plan99"]["print"] = "true";
+    ini["plan98"]["log"] = "true";
+    ini["plan98"]["run"] = "false";
+    ini["plan98"]["print"] = "true";
   }
   // get values from ini-file
-  toConsole = ini["plan99"]["print"] == "true";
+  toConsole = ini["plan98"]["print"] == "true";
   //
-  if (ini["plan99"]["log"] == "true")
+  if (ini["plan98"]["log"] == "true")
   { // open logfile
-    std::string fn = service.logPath + "log_plan99.txt";
+    std::string fn = service.logPath + "log_plan98.txt";
     logfile = fopen(fn.c_str(), "w");
-    fprintf(logfile, "%% Mission plan99 logfile\n");
+    fprintf(logfile, "%% Mission plan98 logfile\n");
     fprintf(logfile, "%% 1 \tTime (sec)\n");
     fprintf(logfile, "%% 2 \tMission state\n");
     fprintf(logfile, "%% 3 \t%% Mission status (mostly for debug)\n");
@@ -67,16 +67,16 @@ void BPlan99::setup()
   setupDone = true;
 }
 
-BPlan99::~BPlan99()
+BPlan98::~BPlan98()
 {
   terminate();
 }
 
-void BPlan99::run()
+void BPlan98::run()
 {
   if (not setupDone)
     setup();
-  if (ini["plan99"]["run"] == "false")
+  if (ini["plan98"]["run"] == "false")
     return;
   UTime t("now");
   bool finished = false;
@@ -86,7 +86,7 @@ void BPlan99::run()
   const int MSL = 100;
   char s[MSL];
   //
-  toLog("Plan99 started");
+  toLog("Plan98 started");
   //
   while (not finished and not lost and not service.stop)
   {
@@ -112,94 +112,25 @@ void BPlan99::run()
         if (pose.dist > 0.3)
         {
           toLog("case 12 done: Continue until edge is found");
-          state = 20;
-          pose.dist = 0;
-        }
-        else if (t.getTimePassed() > 10)
-        { // line should be found within 10 seconds, else lost
-          toLog("failed to find line after 10 sec");
-          lost = true;
-        }
-        break;
-      case 20: // forward looking for line, then turn
-        if (medge.width > 0.05)
-        {
-          toLog("found line, turn left");
-          // set to edge control, left side and 0 offset
-          mixer.setVelocity(0.2); // slow
-          mixer.setTurnrate(1.0); // rad/s
-          state = 30;
-          pose.dist = 0;
-          pose.turned = 0;
-        }
-        else if (t.getTimePassed() > 10 or pose.dist > 0.6)
-        { // line should be found within 10 seconds, else lost
-          toLog("failed to find line after 10 sec / 30cm");
-          lost = true;
-        }
-        break;
-      case 30: // Continue turn until right edge is almost reached, then follow right edge
-        if (medge.edgeValid and medge.rightEdge > -0.04 and pose.turned > 0.3)
-        {
-          toLog("Line detected, that is OK to follow");
-          mixer.setEdgeMode(false /* right */, -0.03 /* offset */);
-          mixer.setVelocity(0.3);
-          state = 40;
-          pose.dist = 0;
-        }
-        else if (t.getTimePassed() > 10)
-        {
-          toLog("Time passed, no crossing line");
-          lost = true;
-        }
-        else if (pose.dist > 1.0)
-        {
-          toLog("Driven too long");
-          state = 90;
-        }
-        break;
-      case 40: // follow edge until passing Tania-gate, then drive a bit further and turn to circle.
-        if (medge.width > 0.075 and pose.dist > 0.2)
-        { // go straight
-          mixer.setTurnrate(0);
-          pose.dist = 0;
-          state = 50;
-        }
-        else if (t.getTimePassed() > 10)
-        {
-          toLog("too long time");
-          finished = true;
-        }
-        else if (not medge.edgeValid)
-        {
-          toLog("Lost line");
-          state = 80;
-        }
-        break;
-      case 50: // continue straight until circle is close
-        if (dist.dist[0] < 0.15) //IR sensoren kan vel ikke rigtig se hvor tæt på circklen er? Hardcodes? 
-        { // wall found
-          toLog("case 50 done: circle found");
-          mixer.setVelocity(0);
           state = 91;
-        }
-        else if (t.getTimePassed() > 10)
-        {
-          toLog("too long time");
-          lost = true;
-        }
-        else if (pose.dist > 1.5)
-        {
-          toLog("too far");
-          lost = true;
+          pose.dist = 0;
         }
         break;
+      
       case 91: // TURN 180 DEGREE
+        toLog("starting case 91");
         mixer.setTurnrate(3.14/5); //TURN 180 DEGREES IN 5 SEC.
-        if (pose.turned > 3.14)
+        mixer.setVelocity(0.0);
+        state = 90;
+        break;
+      case 90:
+        if (pose.turned >= 3.14)
         {
           toLog("case 91 done: turned 180 degrees");
           state = 92;
+          mixer.setTurnrate(0.0); //TURN 180 DEGREES IN 5 SEC.
+          mixer.setVelocity(0.0);
+          pose.resetPose();
         }
         else if (t.getTimePassed() > 10)
         {
@@ -209,11 +140,14 @@ void BPlan99::run()
         break;
       case 92: // MOVE BACKWARDS ONTO PLATFORM
         mixer.setVelocity(-0.2);
-        if (pose.dist > 0.3) //IF DISTANCE DRIVEN = ON PLATFORM
+        state = 99;
+      case 99:
+        if (pose.dist < -0.2) //IF DISTANCE DRIVEN = ON PLATFORM
         {
           mixer.setVelocity(0);
-          toLog("case 92 done: in position for three gates");
-          state = 93;
+          //pose.resetPose();
+          state = 100;
+          toLog("case 101");
         }
         else if (t.getTimePassed() > 10)
         {
@@ -221,22 +155,35 @@ void BPlan99::run()
           lost = true;
         }
         break;
-      case 93: // DO A CIRCLE AND PASS THREE GATES
-        mixer.setTurnrate(0.2); //
-        if (pose.turned > 0.3) // TURNED = DEGREE SUCH THAT THE CIRCLE IS PERFECT ALLIGNED WITH GATES.
+      case 100:
+
+        mixer.setTurnrate(3.14/5);
+        state = 101;
+        break;
+      case 101:
+        if (pose.turned > 3.14/2)
         {
-          mixer.setVelocity(0);
-          toLog("turned, ready to circle");
-          state = 93;
+          mixer.setTurnrate(0);
+          //pose.resetPose();
+          state = 102;
+          toLog("case 102");
         }
-        else if (t.getTimePassed() > 10)
+        break;
+      case 102:
+        mixer.setVelocity(0.3);
+        mixer.setTurnrate(0.628);
+        state = 103;
+        toLog("case 103");
+        break;
+      case 103:
+        if (pose.turned > 6.28)
         {
-          toLog("too long time");
-          lost = true;
+        mixer.setTurnrate(0.0); //TURN 180 DEGREES IN 5 SEC.
+        mixer.setVelocity(0.0);
+        pose.resetPose();
+        toLog("turned 6.28");
+        lost = true;
         }
-        mixer.setTurnrate(-0.1); //CALCULATE TURNRATE TO MATCH VELOCITY
-        mixer.setVelocity(-0.1); //ROBOT DRIVING BACKWARDS TO DO CIRCLE
-        toLog("circling");
         break;
       default:
         lost = true;
@@ -254,23 +201,23 @@ void BPlan99::run()
   }
   if (lost)
   { // there may be better options, but for now - stop
-    toLog("Plan99 got lost - stopping");
+    toLog("Plan98 got lost - stopping");
     mixer.setVelocity(0);
     mixer.setTurnrate(0);
   }
   else
-    toLog("Plan99 finished");
+    toLog("Plan98 finished");
 }
 
 
-void BPlan99::terminate()
+void BPlan98::terminate()
 { //
   if (logfile != nullptr)
     fclose(logfile);
   logfile = nullptr;
 }
 
-void BPlan99::toLog(const char* message)
+void BPlan98::toLog(const char* message)
 {
   UTime t("now");
   if (logfile != nullptr)
