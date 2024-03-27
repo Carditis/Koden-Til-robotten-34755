@@ -38,28 +38,28 @@
 #include "cmixer.h"
 #include "sdist.h"
 
-#include "bplan98.h"
+#include "bplan97.h"
 
 // create class object
-BPlan98 plan98;
+BPlan97 plan97;
 
 
-void BPlan98::setup()
+void BPlan97::setup()
 { // ensure there is default values in ini-file
-  if (not ini["plan98"].has("log"))
+  if (not ini["plan97"].has("log"))
   { // no data yet, so generate some default values
-    ini["plan98"]["log"] = "true";
-    ini["plan98"]["run"] = "false";
-    ini["plan98"]["print"] = "true";
+    ini["plan97"]["log"] = "true";
+    ini["plan97"]["run"] = "false";
+    ini["plan97"]["print"] = "true";
   }
   // get values from ini-file
-  toConsole = ini["plan98"]["print"] == "true";
+  toConsole = ini["plan97"]["print"] == "true";
   //
-  if (ini["plan98"]["log"] == "true")
+  if (ini["plan97"]["log"] == "true")
   { // open logfile
-    std::string fn = service.logPath + "log_plan98.txt";
+    std::string fn = service.logPath + "log_plan97.txt";
     logfile = fopen(fn.c_str(), "w");
-    fprintf(logfile, "%% Mission plan98 logfile\n");
+    fprintf(logfile, "%% Mission plan97 logfile\n");
     fprintf(logfile, "%% 1 \tTime (sec)\n");
     fprintf(logfile, "%% 2 \tMission state\n");
     fprintf(logfile, "%% 3 \t%% Mission status (mostly for debug)\n");
@@ -67,48 +67,62 @@ void BPlan98::setup()
   setupDone = true;
 }
 
-BPlan98::~BPlan98()
+BPlan97::~BPlan97()
 {
   terminate();
 }
 
-void BPlan98::run()
+void BPlan97::run()
 {
   if (not setupDone)
     setup();
-  if (ini["plan98"]["run"] == "false")
+  if (ini["plan97"]["run"] == "false")
     return;
   UTime t("now");
   bool finished = false;
   bool lost = false;
-  state = 5;
+  state = 1;
   oldstate = state;
   const int MSL = 100;
   char s[MSL];
   //
-  toLog("Plan98 started");
+  toLog("Plan97 started");
   //
   while (not finished and not lost and not service.stop)
   {
     switch (state)
     {
-      case 1: // after x meters, stop and turn.
+
+      case 1: // after x meters, then slow down for better line detection
         if (pose.dist > 5)
         {
-          mixer.setVelocity(0.0);
-          mixer.setTurnrate(0.1);
-          toLog("case 1: slowing down and turning");
+          mixer.setVelocity(0.1);
+          toLog("case 1: slowing down");
           state = 2;
         }
         break;
-      case 2: // after turning, stop
-        if (pose.turned > 3.14/2)
+      case 2: // if sharp turn. stop.
+        if (pose.turned > 3.14/3)
         {
-          mixer.setTurnrate(0.0);
+          mixer.setVelocity(0.0);
           toLog("case 2: stopping");
-          state = 5;
+          state = 3;
         }
         break;
+      case 3: // backing off
+        mixer.setVelocity(-0.1);
+        toLog("case 3: backing of");
+        state = 4;
+        break;
+      case 4: // stopping
+        if (pose.dist > 0.1);
+        {
+          setVelocity(0.0);
+          toLog("case 4: stopping");
+          state = 5;
+
+        }
+
       case 5: // wait for Regbot, then go forward
         if (dist.dist[0] < 0.25)
         { // something is close, assume it is the Regbot
@@ -125,83 +139,7 @@ void BPlan98::run()
           lost = true;
         }
         break;
-      case 12: // forward until distance, then look for edge
-        if (pose.dist > 0.3)
-        {
-          toLog("case 12 done: Continue until edge is found");
-          state = 91;
-          pose.dist = 0;
-        }
-        break;
-      
-      case 91: // TURN 180 DEGREE
-        toLog("starting case 91");
-        mixer.setTurnrate(3.14/5); //TURN 180 DEGREES IN 5 SEC.
-        mixer.setVelocity(0.0);
-        state = 90;
-        break;
-      case 90:
-        if (pose.turned >= 3.14)
-        {
-          toLog("case 91 done: turned 180 degrees");
-          state = 92;
-          mixer.setTurnrate(0.0); //TURN 180 DEGREES IN 5 SEC.
-          mixer.setVelocity(0.0);
-          pose.resetPose();
-        }
-        else if (t.getTimePassed() > 10)
-        {
-          toLog("too long time");
-          lost = true;
-        }
-        break;
-      case 92: // MOVE BACKWARDS ONTO PLATFORM
-        mixer.setVelocity(-0.2);
-        state = 99;
-      case 99:
-        if (pose.dist < -0.2) //IF DISTANCE DRIVEN = ON PLATFORM
-        {
-          mixer.setVelocity(0);
-          //pose.resetPose();
-          state = 100;
-          toLog("case 101");
-        }
-        else if (t.getTimePassed() > 10)
-        {
-          toLog("too long time");
-          lost = true;
-        }
-        break;
-      case 100:
 
-        mixer.setTurnrate(3.14/5);
-        state = 101;
-        break;
-      case 101:
-        if (pose.turned > 3.14/2)
-        {
-          mixer.setTurnrate(0);
-          //pose.resetPose();
-          state = 102;
-          toLog("case 102");
-        }
-        break;
-      case 102:
-        mixer.setVelocity(0.3);
-        mixer.setTurnrate(0.628);
-        state = 103;
-        toLog("case 103");
-        break;
-      case 103:
-        if (pose.turned > 6.28)
-        {
-        mixer.setTurnrate(0.0); //TURN 180 DEGREES IN 5 SEC.
-        mixer.setVelocity(0.0);
-        pose.resetPose();
-        toLog("turned 6.28");
-        lost = true;
-        }
-        break;
       default:
         lost = true;
         break;
@@ -218,23 +156,23 @@ void BPlan98::run()
   }
   if (lost)
   { // there may be better options, but for now - stop
-    toLog("Plan98 got lost - stopping");
+    toLog("Plan97 got lost - stopping");
     mixer.setVelocity(0);
     mixer.setTurnrate(0);
   }
   else
-    toLog("Plan98 finished");
+    toLog("Plan97 finished");
 }
 
 
-void BPlan98::terminate()
+void BPlan97::terminate()
 { //
   if (logfile != nullptr)
     fclose(logfile);
   logfile = nullptr;
 }
 
-void BPlan98::toLog(const char* message)
+void BPlan97::toLog(const char* message)
 {
   UTime t("now");
   if (logfile != nullptr)
