@@ -37,28 +37,28 @@
 #include "cedge.h"
 #include "cmixer.h"
 
-#include "bplan20.h"
+#include "bplan401.h"
 
 // create class object
-BPlan20 plan20;
+BPlan401 plan401;
 
 
-void BPlan20::setup()
+void BPlan401::setup()
 { // ensure there is default values in ini-file
-  if (not ini["plan20"].has("log"))
+  if (not ini["plan401"].has("log"))
   { // no data yet, so generate some default values
-    ini["plan20"]["log"] = "true";
-    ini["plan20"]["run"] = "false";
-    ini["plan20"]["print"] = "true";
+    ini["plan401"]["log"] = "true";
+    ini["plan401"]["run"] = "false";
+    ini["plan401"]["print"] = "true";
   }
   // get values from ini-file
-  toConsole = ini["plan20"]["print"] == "true";
+  toConsole = ini["plan401"]["print"] == "true";
   //
-  if (ini["plan20"]["log"] == "true")
+  if (ini["plan401"]["log"] == "true")
   { // open logfile
-    std::string fn = service.logPath + "log_plan20.txt";
+    std::string fn = service.logPath + "log_plan401.txt";
     logfile = fopen(fn.c_str(), "w");
-    fprintf(logfile, "%% Mission plan20 logfile\n");
+    fprintf(logfile, "%% Mission plan401 logfile\n");
     fprintf(logfile, "%% 1 \tTime (sec)\n");
     fprintf(logfile, "%% 2 \tMission state\n");
     fprintf(logfile, "%% 3 \t%% Mission status (mostly for debug)\n");
@@ -66,17 +66,17 @@ void BPlan20::setup()
   setupDone = true;
 }
 
-BPlan20::~BPlan20()
+BPlan401::~BPlan401()
 {
   terminate();
 }
 
 
-void BPlan20::run()
+void BPlan401::run()
 {
   if (not setupDone)
     setup();
-  if (ini["plan20"]["run"] == "false")
+  if (ini["plan401"]["run"] == "false")
     return;
   //
   UTime t("now");
@@ -85,7 +85,7 @@ void BPlan20::run()
   state = 10;
   oldstate = state;
   //
-  toLog("Plan20 started");
+  toLog("plan401 started");
   //
   while (not finished and not lost and not service.stop)
   {
@@ -94,7 +94,7 @@ void BPlan20::run()
       case 10:
         pose.resetPose();
         toLog("forward at 0.3m/s");
-        mixer.setVelocity(-0.3);
+        mixer.setVelocity(0.1);
         state = 11;
         break;
       case 11: // wait for distance
@@ -122,23 +122,23 @@ void BPlan20::run()
   }
   if (lost)
   { // there may be better options, but for now - stop
-    toLog("Plan20 got lost");
+    toLog("plan401 got lost");
     mixer.setVelocity(0);
     mixer.setTurnrate(0);
   }
   else
-    toLog("Plan20 finished");
+    toLog("plan401 finished");
 }
 
 
-void BPlan20::terminate()
+void BPlan401::terminate()
 { //
   if (logfile != nullptr)
     fclose(logfile);
   logfile = nullptr;
 }
 
-void BPlan20::toLog(const char* message)
+void BPlan401::toLog(const char* message)
 {
   UTime t("now");
   if (logfile != nullptr)

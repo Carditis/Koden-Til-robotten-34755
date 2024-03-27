@@ -37,6 +37,8 @@
 #include "cedge.h"
 #include "cmixer.h"
 
+#include "sdist.h"
+
 #include "bplan111.h"
 
 // create class object
@@ -93,8 +95,9 @@ void BPlan111::run()
     { // make a shift in heading-mission
       case 10:
         pose.resetPose();
-        toLog("backward at 0.1m/s");
-        mixer.setVelocity(-0.1);
+        toLog("now work backward at 0.1m/s");
+        mixer.setVelocity(0.6*(-1));
+        mixer.setTurnrate(0);
         state = 11;
         break;
       case 11:
