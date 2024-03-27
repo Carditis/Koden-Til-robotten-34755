@@ -81,7 +81,7 @@ void BPlan98::run()
   UTime t("now");
   bool finished = false;
   bool lost = false;
-  state = 5;
+  state = 0;
   oldstate = state;
   const int MSL = 100;
   char s[MSL];
@@ -92,20 +92,30 @@ void BPlan98::run()
   {
     switch (state)
     {
-      case 1: // after x meters, stop and turn.
-        if (pose.dist > 5)
+      case 0: //drive
+        mixer.setEdgeMode(true, 0);
+        mixer.setVelocity(0.25);
+        state = 1;
+        break;
+      case 1: // when reaching first edge, stop and turn.
+        if (medge.width > 0.15)
         {
+          //pose.resetPose();
           mixer.setVelocity(0.0);
-          mixer.setTurnrate(0.1);
-          toLog("case 1: slowing down and turning");
+          mixer.setDesiredHeading(3.14);
+          usleep(1000000); 
+          mixer.setVelocity(-0.1);
+
+          toLog("case 1: edge found - stopping and turning");
           state = 2;
+          pose.dist = 0;
         }
         break;
-      case 2: // after turning, stop
-        if (pose.turned > 3.14/2)
+      case 2: 
+        if (pose.dist <= -0.1)
         {
-          mixer.setTurnrate(0.0);
-          toLog("case 2: stopping");
+          pose.dist = 0;
+          pose.resetPose();
           state = 5;
         }
         break;
@@ -113,58 +123,77 @@ void BPlan98::run()
         if (dist.dist[0] < 0.25)
         { // something is close, assume it is the Regbot
           // start driving
-          pose.resetPose();
-          toLog("forward 0.1 m/sec");
-          mixer.setVelocity(0.25);
-          mixer.setTurnrate(0);
-          state = 12;
+          //pose.resetPose();
+          toLog("case 5: Tania passed - entering outer circle");
+          mixer.setVelocity(0.20);
+          state = 55;
         }
-        else if (t.getTimePassed() > 10)
+        else if (t.getTimePassed() > 30)
         {
           toLog("Gave up waiting for Regbot");
           lost = true;
         }
         break;
-      case 12: // forward until distance, then look for edge
-        if (pose.dist > 0.3)
+      case 55:
+        if (medge.width > 0.15)
         {
-          toLog("case 12 done: Continue until edge is found");
-          state = 91;
+          mixer.setVelocity(0.0);
+          usleep(500000);
+          mixer.setDesiredHeading(3.14);
+          usleep(500000);
+          state = 6;
+        }
+      case 6:
+        if (dist.dist[0] <= 0.25 && pose.dist < 2)
+        {
+          mixer.setVelocity(0.0);
+          toLog("case 6: something is infront - stopping");
+          usleep(1000000);
+        } 
+        else if (pose.dist < 2)
+        {
+          mixer.setVelocity(0.25);
+          toLog("case 6: proceeding");
+        }
+        else
+        {
+          toLog("case 6: circle complete");
+          state = 7;
+          //pose.resetPose();
           pose.dist = 0;
+          break;
         }
         break;
       
-      case 91: // TURN 180 DEGREE
-        toLog("starting case 91");
-        mixer.setTurnrate(3.14/5); //TURN 180 DEGREES IN 5 SEC.
+      case 7: // TURN 90 DEGREE TO THE LEFT
+        mixer.setDesiredHeading(3.14); //TURN 90 DEGREES IN 3 SEC.
         mixer.setVelocity(0.0);
-        state = 90;
+        toLog("case 7: turning 90 deg to the left");
+        state = 8;
         break;
-      case 90:
+      case 8:
         if (pose.turned >= 3.14)
         {
-          toLog("case 91 done: turned 180 degrees");
-          state = 92;
-          mixer.setTurnrate(0.0); //TURN 180 DEGREES IN 5 SEC.
-          mixer.setVelocity(0.0);
-          pose.resetPose();
-        }
-        else if (t.getTimePassed() > 10)
-        {
-          toLog("too long time");
-          lost = true;
+          //pose.resetPose();
+          pose.turned = 0;
+          pose.dist = 0;
+          state = 9;
         }
         break;
-      case 92: // MOVE BACKWARDS ONTO PLATFORM
+      case 9: // MOVE BACKWARDS ONTO PLATFORM
         mixer.setVelocity(-0.2);
-        state = 99;
-      case 99:
+        state = 10;
+        toLog("case 9: driving backwards");
+        break;
+      case 10:
         if (pose.dist < -0.2) //IF DISTANCE DRIVEN = ON PLATFORM
         {
+          //pose.resetPose();
           mixer.setVelocity(0);
           //pose.resetPose();
-          state = 100;
-          toLog("case 101");
+          pose.dist = 0;
+          state = 11;
+          toLog("case 10: stopping - on platform");
         }
         else if (t.getTimePassed() > 10)
         {
@@ -172,34 +201,75 @@ void BPlan98::run()
           lost = true;
         }
         break;
-      case 100:
-
-        mixer.setTurnrate(3.14/5);
-        state = 101;
+      case 11:
+        //pose.resetPose();
+        mixer.setDesiredHeading(3.14);
+        state = 12;
+        toLog("case 11: turning 90 degrees to the left");
         break;
-      case 101:
-        if (pose.turned > 3.14/2)
+      case 12:
+        if (pose.turned >= 3.14)
         {
-          mixer.setTurnrate(0);
           //pose.resetPose();
-          state = 102;
-          toLog("case 102");
+          pose.turned = 0;
+          state = 13;
         }
         break;
-      case 102:
-        mixer.setVelocity(0.3);
+      case 13:
+        //pose.resetPose();
+        mixer.setVelocity(-0.3);
         mixer.setTurnrate(0.628);
-        state = 103;
-        toLog("case 103");
+        state = 14;
+        toLog("case 13: circling");
         break;
-      case 103:
+      case 14:
         if (pose.turned > 6.28)
         {
+        //pose.resetPose();
         mixer.setTurnrate(0.0); //TURN 180 DEGREES IN 5 SEC.
         mixer.setVelocity(0.0);
-        pose.resetPose();
-        toLog("turned 6.28");
-        lost = true;
+        state = 15;
+        toLog("case 14: circle complete");
+        //pose.resetPose();
+        pose.dist = 0;
+        pose.turned = 0;
+        }
+        break;
+      case 15:
+        mixer.setDesiredHeading(-3.14);
+        state = 16;
+        toLog("case 15: turning 90 degrees to the right");
+        break;
+      case 16:
+        if (pose.turned <= -3.14)
+        {
+          //pose.resetPose();
+          pose.turned = 0;
+          pose.dist = 0;
+          state = 17;
+        }
+        break;
+      case 17:
+        if (dist.dist[0] < 0.25)
+        { // something is close, assume it is the Regbot
+          // start driving
+          //pose.resetPose();
+          mixer.setVelocity(0.25);
+          mixer.setTurnrate(0);
+          state = 18;
+          toLog("case 17: Tania passed - driving forward");
+          //pose.resetPose();
+        }
+        break;
+      case 18:
+        if (pose.dist > 0.2)
+        {
+          //pose.resetPose();
+          mixer.setVelocity(0.0);
+          mixer.setDesiredHeading(3.14);
+          state = 19;
+          toLog("case 18: exitted circle - turning 90 degrees left");
+          lost = true;          
         }
         break;
       default:

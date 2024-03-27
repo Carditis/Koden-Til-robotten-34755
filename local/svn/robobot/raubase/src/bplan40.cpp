@@ -100,7 +100,8 @@ void BPlan40::run()
           toLog("forward 0.1 m/sec");
           mixer.setVelocity(0.25);
           mixer.setTurnrate(0);
-          state = 12;
+          //state = 12;
+          state = 20;
         }
         else if (t.getTimePassed() > 10)
         {
@@ -132,7 +133,7 @@ void BPlan40::run()
           pose.dist = 0;
           pose.turned = 0;
         }
-        else if (t.getTimePassed() > 10 or pose.dist > 0.6)
+        else if (t.getTimePassed() > 10)
         { // line should be found within 10 seconds, else lost
           toLog("failed to find line after 10 sec / 30cm");
           lost = true;
